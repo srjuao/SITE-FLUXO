@@ -315,17 +315,25 @@ textarea {
 .nav__toggle {
     display: none;
     flex-direction: column;
-    gap: 5px;
-    background: none;
-    border: none;
+    gap: 6px;
+    background: rgba(39, 39, 42, 0.8);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    padding: var(--spacing-2);
+    padding: 10px;
+    transition: all var(--transition-base);
+}
+
+.nav__toggle:hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-accent-primary);
 }
 
 .nav__toggle span {
-    width: 24px;
-    height: 2px;
+    width: 22px;
+    height: 3px;
     background: var(--color-text-primary);
+    border-radius: 2px;
     transition: all var(--transition-base);
 }
 
@@ -1395,17 +1403,23 @@ textarea {
         z-index: 1001;
     }
 
+    .nav__toggle.active {
+        background: var(--color-accent-primary);
+        border-color: var(--color-accent-primary);
+    }
+
     /* Hamburger animation */
     .nav__toggle.active span:nth-child(1) {
-        transform: rotate(45deg) translate(5px, 5px);
+        transform: rotate(45deg) translate(6px, 6px);
     }
 
     .nav__toggle.active span:nth-child(2) {
         opacity: 0;
+        transform: scaleX(0);
     }
 
     .nav__toggle.active span:nth-child(3) {
-        transform: rotate(-45deg) translate(5px, -5px);
+        transform: rotate(-45deg) translate(6px, -6px);
     }
 
     /* Mobile Menu Overlay */
@@ -1417,10 +1431,12 @@ textarea {
         left: 0;
         right: 0;
         bottom: 0;
-        background: var(--color-bg-primary);
+        background: rgba(9, 9, 11, 0.98);
+        backdrop-filter: blur(20px);
         padding: var(--spacing-8);
         z-index: 999;
-        animation: slideDown 0.3s ease;
+        animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
     }
 
     @keyframes slideDown {
