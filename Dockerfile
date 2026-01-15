@@ -21,4 +21,4 @@ COPY --from=build /app/dist /app/dist
 # Expose port 80
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off; error_log /dev/stderr info;"]

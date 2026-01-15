@@ -8,4 +8,4 @@ cmds = ["npm install"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "nginx -c /app/nginx.conf -g 'daemon off; error_log stderr;'"
+cmd = "mkdir -p /var/log/nginx && nginx -c /app/nginx.conf -g 'daemon off; error_log /dev/stderr info;'"
