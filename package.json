@@ -2,6 +2,7 @@
   "name": "fluxo-clinicas-site",
   "version": "1.0.0",
   "description": "Site institucional Fluxo Clínicas",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

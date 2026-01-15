@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs", "nginx"]
+nixPkgs = ["nodejs_23", "nginx"]
 
 [phases.install]
 cmds = ["npm install"]
