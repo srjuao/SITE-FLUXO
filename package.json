@@ -1,0 +1,12 @@
+{
+  "name": "fluxo-clinicas-site",
+  "version": "1.0.0",
+  "description": "Site institucional Fluxo Clínicas",
+  "scripts": {
+    "start": "npx serve .",
+    "build": "echo 'Static site - no build needed'"
+  },
+  "keywords": ["fluxo", "clinicas", "saude"],
+  "author": "Fluxo Clínicas",
+  "license": "MIT"
+}
