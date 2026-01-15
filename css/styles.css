@@ -287,6 +287,10 @@ textarea {
     display: flex;
 }
 
+.nav__mobile-actions {
+    display: none;
+}
+
 .nav__list {
     display: flex;
     gap: var(--spacing-8);
@@ -1388,22 +1392,86 @@ textarea {
 
     .nav__toggle {
         display: flex;
+        z-index: 1001;
     }
 
+    /* Hamburger animation */
+    .nav__toggle.active span:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .nav__toggle.active span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .nav__toggle.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(5px, -5px);
+    }
+
+    /* Mobile Menu Overlay */
     .nav__menu.active {
         display: flex;
-        position: absolute;
-        top: 100%;
+        flex-direction: column;
+        position: fixed;
+        top: 72px;
         left: 0;
         right: 0;
+        bottom: 0;
         background: var(--color-bg-primary);
-        border-bottom: 1px solid var(--color-border);
-        padding: var(--spacing-4);
+        padding: var(--spacing-8);
+        z-index: 999;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .nav__menu.active .nav__list {
         flex-direction: column;
-        gap: var(--spacing-4);
+        gap: var(--spacing-2);
+        width: 100%;
+    }
+
+    .nav__menu.active .nav__link {
+        display: block;
+        padding: var(--spacing-4);
+        font-size: var(--font-size-lg);
+        border-radius: var(--radius-lg);
+        transition: background var(--transition-fast);
+    }
+
+    .nav__menu.active .nav__link:hover {
+        background: var(--color-bg-secondary);
+    }
+
+    /* Mobile menu actions */
+    .nav__menu.active .nav__mobile-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-3);
+        margin-top: auto;
+        padding-top: var(--spacing-6);
+        border-top: 1px solid var(--color-border);
+    }
+
+    .nav__menu.active .nav__mobile-actions .btn {
+        width: 100%;
+        justify-content: center;
+        padding: var(--spacing-4);
+    }
+
+    /* Body scroll lock when menu is open */
+    body.menu-open {
+        overflow: hidden;
     }
 
     .hero {
@@ -1431,6 +1499,18 @@ textarea {
     .footer__grid {
         grid-template-columns: 1fr;
         gap: var(--spacing-8);
+    }
+
+    .section-header {
+        margin-bottom: var(--spacing-10);
+    }
+
+    .section-title {
+        font-size: var(--font-size-3xl);
+    }
+
+    .container {
+        padding: 0 var(--spacing-4);
     }
 }
 
