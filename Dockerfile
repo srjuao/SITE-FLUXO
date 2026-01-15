@@ -1,24 +1,44 @@
-# Build Stage
-FROM node:23-alpine as build
+# syntax=docker/dockerfile:1
+
+# Base stage
+FROM node:20-alpine AS base
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+
+# Dependencies stage
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Builder stage
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Disable telemetry during build
+ENV NEXT_TELEMETRY_DISABLED=1
+
 RUN npm run build
 
-# Serve Stage
-FROM nginx:alpine
+# Runner stage
+FROM base AS runner
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Copy our custom nginx config
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copy necessary files
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy built assets
-COPY --from=build /app/dist /app/dist
+USER nextjs
 
-# Expose port 8080
-EXPOSE 8080
+EXPOSE 3000
 
-CMD ["nginx", "-g", "daemon off; error_log /dev/stderr info;"]
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]
