@@ -5,12 +5,12 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-    title: "Fluxo Clínicas | Gestão Inteligente para sua Clínica",
-    description: "Tecnologia que humaniza a saúde. Simplificamos a gestão da sua clínica para você focar no que realmente importa: o cuidado com seus pacientes.",
+    title: "FluxoClínicas | Agenda, atendimento e gestão em um só fluxo",
+    description: "Organize agenda, recepção, prontuário e gestão da clínica em uma plataforma feita para sua equipe.",
     icons: {
-        icon: '/assets/logo.png',
-        shortcut: '/assets/logo.png',
-        apple: '/assets/logo.png',
+        icon: '/assets/fluxoclinicas-mark.svg',
+        shortcut: '/assets/fluxoclinicas-mark.svg',
+        apple: '/assets/fluxoclinicas-mark.svg',
     },
 };
 
