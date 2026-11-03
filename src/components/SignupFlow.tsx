@@ -20,6 +20,10 @@ export default function SignupFlow() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [taxId, setTaxId] = useState("");
+  const [address, setAddress] = useState("");
+  const [addressNumber, setAddressNumber] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [province, setProvince] = useState("");
   const [doctors, setDoctors] = useState("");
   const [ready, setReady] = useState(false);
   const [sending, setSending] = useState(false);
@@ -30,7 +34,7 @@ export default function SignupFlow() {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const checkoutAttempt = useRef<string | null>(null);
 
-  useEffect(() => { checkoutAttempt.current = null; }, [plan, messaging, name, clinic, email, phone, taxId, doctors]);
+  useEffect(() => { checkoutAttempt.current = null; }, [plan, messaging, name, clinic, email, phone, taxId, address, addressNumber, postalCode, province, doctors]);
 
   useEffect(() => {
     if (journey !== "demo") return;
@@ -72,7 +76,7 @@ export default function SignupFlow() {
         const response = await fetch("/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Idempotency-Key": checkoutAttempt.current },
-          body: JSON.stringify({ plan, messaging, name, clinic, email, phone, doctors: Number(doctors), taxId: taxId.replace(/\D/g, "") }),
+          body: JSON.stringify({ plan, messaging, name, clinic, email, phone, doctors: Number(doctors), taxId: taxId.replace(/\D/g, ""), address, addressNumber, postalCode: postalCode.replace(/\D/g, ""), province }),
         });
         const result = await response.json() as { checkoutUrl?: string; error?: string };
         if (!response.ok || !result.checkoutUrl) throw new Error(result.error || "O pagamento está indisponível. Tente novamente mais tarde ou agende uma demonstração.");
@@ -120,6 +124,7 @@ export default function SignupFlow() {
       <p className="signup-note">Franquias para lembretes de consulta. Uma confirmação e um lembrete consomem duas mensagens. Campanhas não estão incluídas; ao atingir o limite, novos envios ficam pausados.</p>
       <div className="signup-row"><label>Seu nome<input required autoComplete="name" value={name} onChange={event => { setName(event.target.value); setReady(false); }} placeholder="Nome do responsável" /></label><label>Clínica ou consultório<input required value={clinic} onChange={event => { setClinic(event.target.value); setReady(false); }} placeholder="Nome da clínica" /></label></div>
       {checkoutEligible && <label>CPF ou CNPJ do pagador<input required inputMode="numeric" autoComplete="off" value={taxId} onChange={event => { setTaxId(event.target.value); setReady(false); }} placeholder="CPF ou CNPJ" minLength={11} maxLength={18} /></label>}
+      {checkoutEligible && <><div className="signup-row"><label>CEP do pagador<input required inputMode="numeric" autoComplete="postal-code" value={postalCode} onChange={event => { setPostalCode(event.target.value); setReady(false); }} placeholder="00000-000" /></label><label>Rua e endereço<input required autoComplete="street-address" value={address} onChange={event => { setAddress(event.target.value); setReady(false); }} placeholder="Rua, avenida ou praça" /></label></div><div className="signup-row"><label>Número<input required value={addressNumber} onChange={event => { setAddressNumber(event.target.value); setReady(false); }} placeholder="Número" /></label><label>Bairro<input required value={province} onChange={event => { setProvince(event.target.value); setReady(false); }} placeholder="Bairro" /></label></div></>}
       <div className="signup-row"><label>E-mail de contato<input required type="email" autoComplete="email" value={email} onChange={event => { setEmail(event.target.value); setReady(false); }} placeholder="voce@clinica.com.br" /></label><label>WhatsApp com DDD<input required type="tel" autoComplete="tel" value={phone} onChange={event => { setPhone(event.target.value); setReady(false); }} placeholder="(62) 99999-9999" /></label></div>
       <label>Quantos médicos usarão o sistema?<input required type="number" min="1" max="100" value={doctors} onChange={event => { setDoctors(event.target.value); setReady(false); }} placeholder="Ex.: 5" /></label>
       {journey === "demo" && <label>Horário da demonstração<select value={selectedSlot} onChange={event => { setSelectedSlot(event.target.value); setReady(false); }} disabled={slotsLoading || demoSlots.length === 0}><option value="">{slotsLoading ? "Carregando horários..." : demoSlots.length ? "Escolha um horário" : "Nenhum horário disponível; solicite contato"}</option>{demoSlots.map(slot => <option key={slot.id} value={slot.id}>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(slot.startsAt))}</option>)}</select></label>}
