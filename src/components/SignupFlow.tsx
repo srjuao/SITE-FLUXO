@@ -78,11 +78,12 @@ export default function SignupFlow() {
           headers: { "Content-Type": "application/json", "Idempotency-Key": checkoutAttempt.current },
           body: JSON.stringify({ plan, messaging, name, clinic, email, phone, doctors: Number(doctors), taxId: taxId.replace(/\D/g, ""), address, addressNumber, postalCode: postalCode.replace(/\D/g, ""), province }),
         });
-        const result = await response.json() as { checkoutUrl?: string; error?: string };
-        if (!response.ok || !result.checkoutUrl) throw new Error(result.error || "O pagamento está indisponível. Tente novamente mais tarde ou agende uma demonstração.");
+        const result = await response.json() as { orderId?: string; checkoutUrl?: string; amountCents?: number; error?: string };
+        if (!response.ok || !result.checkoutUrl || !result.orderId || !/^[0-9a-f-]{36}$/i.test(result.orderId) || !Number.isSafeInteger(result.amountCents) || result.amountCents! <= 0) throw new Error(result.error || "O pagamento está indisponível. Tente novamente mais tarde ou agende uma demonstração.");
         const checkout = new URL(result.checkoutUrl);
         if (checkout.protocol !== "https:" || !["asaas.com", "sandbox.asaas.com"].includes(checkout.hostname)) throw new Error("O endereço de pagamento retornado é inválido.");
-        window.location.assign(checkout.toString());
+        window.sessionStorage.setItem(`fluxo-checkout:${result.orderId}`, JSON.stringify({ checkoutUrl: checkout.toString(), plan, clinic, doctors: Number(doctors), amountCents: result.amountCents }));
+        window.location.assign(`/pagamento?pedido=${encodeURIComponent(result.orderId)}`);
         return;
       }
       if (journey === "demo" && selectedSlot) {
