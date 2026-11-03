@@ -7,9 +7,8 @@ export async function POST(request: Request) {
   try { body = await request.json(); } catch {
     return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
   }
-  const apiBase = process.env.FLUXO_API_BASE_URL || "https://api.fluxoclinicas.online";
   try {
-    const upstream = await fetch(`${apiBase}/v1/public/commercial-leads`, {
+    const upstream = await fetch("https://api.fluxoclinicas.online/v1/public/commercial-leads", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
