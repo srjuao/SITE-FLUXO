@@ -15,6 +15,7 @@ export default function SignupFlow() {
   const [journey, setJourney] = useState<"start" | "demo">("start");
   const [plan, setPlan] = useState(planNames[1]);
   const [messaging, setMessaging] = useState("none");
+  const [paymentMethod, setPaymentMethod] = useState<"PIX" | "CREDIT_CARD">("PIX");
   const [name, setName] = useState("");
   const [clinic, setClinic] = useState("");
   const [email, setEmail] = useState("");
@@ -34,7 +35,7 @@ export default function SignupFlow() {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const checkoutAttempt = useRef<string | null>(null);
 
-  useEffect(() => { checkoutAttempt.current = null; }, [plan, messaging, name, clinic, email, phone, taxId, address, addressNumber, postalCode, province, doctors]);
+  useEffect(() => { checkoutAttempt.current = null; }, [plan, messaging, paymentMethod, name, clinic, email, phone, taxId, address, addressNumber, postalCode, province, doctors]);
 
   useEffect(() => {
     if (journey !== "demo") return;
@@ -73,16 +74,21 @@ export default function SignupFlow() {
     try {
       if (checkoutEligible) {
         checkoutAttempt.current ??= crypto.randomUUID();
-        const response = await fetch("/api/checkout", {
+        const response = await fetch(paymentMethod === "PIX" ? "/api/pix-checkout" : "/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Idempotency-Key": checkoutAttempt.current },
-          body: JSON.stringify({ plan, messaging, name, clinic, email, phone, doctors: Number(doctors), taxId: taxId.replace(/\D/g, ""), address, addressNumber, postalCode: postalCode.replace(/\D/g, ""), province }),
+          body: JSON.stringify({ plan, messaging, ...(paymentMethod === "CREDIT_CARD" ? { billingMethod: "CREDIT_CARD" } : {}), name, clinic, email, phone, doctors: Number(doctors), taxId: taxId.replace(/\D/g, ""), address, addressNumber, postalCode: postalCode.replace(/\D/g, ""), province }),
         });
         const result = await response.json() as { orderId?: string; checkoutUrl?: string; amountCents?: number; error?: string };
-        if (!response.ok || !result.checkoutUrl || !result.orderId || !/^[0-9a-f-]{36}$/i.test(result.orderId) || !Number.isSafeInteger(result.amountCents) || result.amountCents! <= 0) throw new Error(result.error || "O pagamento está indisponível. Tente novamente mais tarde ou agende uma demonstração.");
-        const checkout = new URL(result.checkoutUrl);
-        if (checkout.protocol !== "https:" || !["asaas.com", "sandbox.asaas.com"].includes(checkout.hostname)) throw new Error("O endereço de pagamento retornado é inválido.");
-        window.sessionStorage.setItem(`fluxo-checkout:${result.orderId}`, JSON.stringify({ checkoutUrl: checkout.toString(), plan, clinic, doctors: Number(doctors), amountCents: result.amountCents }));
+        if (!response.ok || !result.orderId || !/^[0-9a-f-]{36}$/i.test(result.orderId) || !Number.isSafeInteger(result.amountCents) || result.amountCents! <= 0) throw new Error(result.error || "O pagamento está indisponível. Tente novamente mais tarde ou agende uma demonstração.");
+        let checkoutUrl: string | null = null;
+        if (paymentMethod === "CREDIT_CARD") {
+          if (!result.checkoutUrl) throw new Error("O endereço de pagamento retornado é inválido.");
+          const checkout = new URL(result.checkoutUrl);
+          if (checkout.protocol !== "https:" || !["asaas.com", "sandbox.asaas.com"].includes(checkout.hostname) || checkout.pathname !== "/checkoutSession/show") throw new Error("O endereço de pagamento retornado é inválido.");
+          checkoutUrl = checkout.toString();
+        }
+        window.sessionStorage.setItem(`fluxo-checkout:${result.orderId}`, JSON.stringify({ checkoutUrl, paymentMethod, plan, clinic, doctors: Number(doctors), amountCents: result.amountCents }));
         window.location.assign(`/pagamento?pedido=${encodeURIComponent(result.orderId)}`);
         return;
       }
@@ -126,10 +132,11 @@ export default function SignupFlow() {
       <div className="signup-row"><label>Seu nome<input required autoComplete="name" value={name} onChange={event => { setName(event.target.value); setReady(false); }} placeholder="Nome do responsável" /></label><label>Clínica ou consultório<input required value={clinic} onChange={event => { setClinic(event.target.value); setReady(false); }} placeholder="Nome da clínica" /></label></div>
       {checkoutEligible && <label>CPF ou CNPJ do pagador<input required inputMode="numeric" autoComplete="off" value={taxId} onChange={event => { setTaxId(event.target.value); setReady(false); }} placeholder="CPF ou CNPJ" minLength={11} maxLength={18} /></label>}
       {checkoutEligible && <><div className="signup-row"><label>CEP do pagador<input required inputMode="numeric" autoComplete="postal-code" value={postalCode} onChange={event => { setPostalCode(event.target.value); setReady(false); }} placeholder="00000-000" /></label><label>Rua e endereço<input required autoComplete="street-address" value={address} onChange={event => { setAddress(event.target.value); setReady(false); }} placeholder="Rua, avenida ou praça" /></label></div><div className="signup-row"><label>Número<input required value={addressNumber} onChange={event => { setAddressNumber(event.target.value); setReady(false); }} placeholder="Número" /></label><label>Bairro<input required value={province} onChange={event => { setProvince(event.target.value); setReady(false); }} placeholder="Bairro" /></label></div></>}
+      {checkoutEligible && <fieldset className="signup-payment-method"><legend>Como prefere pagar?</legend><label><input type="radio" name="payment-method" checked={paymentMethod === "PIX"} onChange={() => { setPaymentMethod("PIX"); setReady(false); }} />Pix na FluxoClínicas</label><label><input type="radio" name="payment-method" checked={paymentMethod === "CREDIT_CARD"} onChange={() => { setPaymentMethod("CREDIT_CARD"); setReady(false); }} />Cartão no ambiente seguro do Asaas</label></fieldset>}
       <div className="signup-row"><label>E-mail de contato<input required type="email" autoComplete="email" value={email} onChange={event => { setEmail(event.target.value); setReady(false); }} placeholder="voce@clinica.com.br" /></label><label>WhatsApp com DDD<input required type="tel" autoComplete="tel" value={phone} onChange={event => { setPhone(event.target.value); setReady(false); }} placeholder="(62) 99999-9999" /></label></div>
       <label>Quantos médicos usarão o sistema?<input required type="number" min="1" max="100" value={doctors} onChange={event => { setDoctors(event.target.value); setReady(false); }} placeholder="Ex.: 5" /></label>
       {journey === "demo" && <label>Horário da demonstração<select value={selectedSlot} onChange={event => { setSelectedSlot(event.target.value); setReady(false); }} disabled={slotsLoading || demoSlots.length === 0}><option value="">{slotsLoading ? "Carregando horários..." : demoSlots.length ? "Escolha um horário" : "Nenhum horário disponível; solicite contato"}</option>{demoSlots.map(slot => <option key={slot.id} value={slot.id}>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(slot.startsAt))}</option>)}</select></label>}
-      <div className="signup-total" aria-live="polite"><span>{checkoutEligible ? "Valor da primeira cobrança" : "Total mensal estimado"}</span><strong>{total === null ? "Sob proposta" : formatBRL(total)}</strong><small>Plano + médicos + franquia escolhida. {checkoutEligible ? "Você revisará o pagamento na página segura do Asaas." : "Sem cobrança nesta etapa."}</small></div>
+      <div className="signup-total" aria-live="polite"><span>{checkoutEligible ? "Valor da primeira cobrança" : "Total mensal estimado"}</span><strong>{total === null ? "Sob proposta" : formatBRL(total)}</strong><small>Plano + médicos + franquia escolhida. {checkoutEligible ? paymentMethod === "PIX" ? "O Pix aparecerá na página de pagamento da FluxoClínicas." : "O cartão será informado na página segura do Asaas." : "Sem cobrança nesta etapa."}</small></div>
       <button className="button button-coral" type="submit">Revisar solicitação ↗</button>
       <p className="signup-disclaimer">{checkoutEligible ? "A clínica só será ativada após a confirmação do pagamento pelo Asaas." : "Esta etapa não cria acesso nem gera cobrança."} Lembretes automáticos dependem de ativação do serviço.</p>
     </form>
@@ -137,7 +144,7 @@ export default function SignupFlow() {
     {submitted && <div className="signup-success" role="status"><strong>{journey === "start" ? "Pedido de proposta recebido!" : selectedSlot ? "Demonstração agendada!" : "Pedido de demonstração recebido!"}</strong><p>{journey === "demo" && selectedSlot ? "O horário foi reservado. Nossa equipe entrará em contato para confirmar os detalhes." : "A equipe comercial recebeu sua solicitação e entrará em contato."}</p></div>}
     {ready && <div className="signup-review" role="status">
       <div className="signup-review-brand"><img src="/assets/fluxoclinicas-mark-light.svg" alt="" width="34" height="34" /><span>FluxoClínicas<small>{checkoutEligible ? "Confira sua contratação" : "Confira sua solicitação"}</small></span></div>
-      <div className="signup-review-content"><h4>{checkoutEligible ? "Resumo da contratação" : "Confira antes de enviar"}</h4><dl><div><dt>Clínica</dt><dd>{clinic}</dd></div><div><dt>Plano</dt><dd>{plan} · {doctors} médico(s)</dd></div><div><dt>Mensageria</dt><dd>{messagingOptions.find(option => option.value === messaging)?.label}</dd></div><div><dt>Responsável</dt><dd>{name} · {email} · {phone}</dd></div>{checkoutEligible && <div className="signup-review-price"><dt>Mensalidade</dt><dd>{formatBRL(total!)}</dd></div>}</dl><button className="button button-dark" type="button" onClick={sendLead} disabled={sending}>{sending ? "Aguarde..." : checkoutEligible ? "Continuar para pagamento seguro ↗" : journey === "demo" ? "Solicitar demonstração ↗" : "Solicitar proposta ↗"}</button><small>{checkoutEligible ? "Você concluirá o pagamento na página segura do Asaas. A clínica será ativada após a confirmação." : "A equipe entrará em contato para combinar o próximo passo."}</small></div>
+      <div className="signup-review-content"><h4>{checkoutEligible ? "Resumo da contratação" : "Confira antes de enviar"}</h4><dl><div><dt>Clínica</dt><dd>{clinic}</dd></div><div><dt>Plano</dt><dd>{plan} · {doctors} médico(s)</dd></div><div><dt>Mensageria</dt><dd>{messagingOptions.find(option => option.value === messaging)?.label}</dd></div><div><dt>Responsável</dt><dd>{name} · {email} · {phone}</dd></div>{checkoutEligible && <div className="signup-review-price"><dt>Mensalidade</dt><dd>{formatBRL(total!)}</dd></div>}</dl><button className="button button-dark" type="button" onClick={sendLead} disabled={sending}>{sending ? "Aguarde..." : checkoutEligible ? "Continuar para pagamento seguro ↗" : journey === "demo" ? "Solicitar demonstração ↗" : "Solicitar proposta ↗"}</button><small>{checkoutEligible ? paymentMethod === "PIX" ? "O Pix aparecerá na página da FluxoClínicas. A clínica será ativada após a confirmação." : "O cartão será informado na página segura do Asaas. A clínica será ativada após a confirmação." : "A equipe entrará em contato para combinar o próximo passo."}</small></div>
     </div>}
   </div>;
 }
