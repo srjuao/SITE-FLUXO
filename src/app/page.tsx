@@ -1,5 +1,10 @@
 import PlansCarousel from "@/components/PlansCarousel";
 import SignupFlow from "@/components/SignupFlow";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const plans = [
   {name:'Médico Individual',price:'R$ 75',unit:'por médico/mês',features:['Agenda própria','Pacientes e prontuário','Anamnese, exames e documentos','Receitas e atestados em rascunho']},

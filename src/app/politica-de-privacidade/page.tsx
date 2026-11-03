@@ -3,6 +3,13 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
     title: "Política de Privacidade | Fluxo Clínicas",
     description: "Política de privacidade do Fluxo Clínicas.",
+    alternates: { canonical: "/politica-de-privacidade" },
+    openGraph: {
+        url: "/politica-de-privacidade",
+        title: "Política de Privacidade | FluxoClínicas",
+        description: "Política de privacidade do FluxoClínicas.",
+        images: [{ url: "/assets/equipe-clinica.png", width: 1672, height: 941, alt: "Equipe de uma clínica usando o FluxoClínicas" }],
+    },
 };
 
 export default function PoliticaDePrivacidade() {

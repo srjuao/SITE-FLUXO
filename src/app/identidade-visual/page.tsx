@@ -1,6 +1,16 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Identidade visual | FluxoClínicas" };
+export const metadata: Metadata = {
+  title: "Identidade visual | FluxoClínicas",
+  description: "Conheça a marca, o pictograma e a paleta de cores do FluxoClínicas.",
+  alternates: { canonical: "/identidade-visual" },
+  openGraph: {
+    url: "/identidade-visual",
+    title: "Identidade visual | FluxoClínicas",
+    description: "Conheça a marca, o pictograma e a paleta de cores do FluxoClínicas.",
+    images: [{ url: "/assets/equipe-clinica.png", width: 1672, height: 941, alt: "Equipe de uma clínica usando o FluxoClínicas" }],
+  },
+};
 
 const colors = [
   ["Verde principal", "#116A69", "brand-teal"],
