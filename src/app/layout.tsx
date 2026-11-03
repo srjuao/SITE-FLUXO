@@ -6,6 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://fluxoclinicas.online"),
+    verification: { google: "VN3UFHlE8ZioEt4LtNF-Ka4cbfPRqVLBQ0QzHtYft6Y" },
     title: "FluxoClínicas | Agenda, atendimento e gestão em um só fluxo",
     description: "Organize agenda, recepção, prontuário e gestão da clínica em uma plataforma feita para sua equipe.",
     openGraph: {
