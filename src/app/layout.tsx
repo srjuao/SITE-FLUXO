@@ -18,6 +18,7 @@ export const metadata: Metadata = {
     description: "Agenda médica, recepção, prontuário, painel de chamada e gestão financeira em um software que acompanha o fluxo da sua clínica. Conheça os planos.",
     applicationName: "FluxoClínicas",
     category: "software de gestão para clínicas",
+    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "FluxoClínicas" },
     openGraph: {
         url: "/",
         type: "website",

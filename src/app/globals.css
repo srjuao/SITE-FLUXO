@@ -91,6 +91,7 @@
 }
 
 /* Preenche a área da câmera no iPhone e mantém os controles acessíveis. */
+html,body{background-color:#113d42}
 @supports(padding-top:env(safe-area-inset-top)){
   .site-header{padding-top:env(safe-area-inset-top)}
   .hero-grid{padding-top:calc(150px + env(safe-area-inset-top))}
