@@ -99,3 +99,5 @@ html,body{background-color:#113d42}
     .hero-grid{padding-top:calc(115px + env(safe-area-inset-top))}
   }
 }
+
+.footer-content{display:grid;grid-template-columns:minmax(250px,2fr) repeat(2,minmax(160px,1fr));gap:48px;padding:64px 0 52px}.footer-about p{max-width:330px;margin:18px 0 0;color:#b9d4ce;line-height:1.6;font-size:14px}.footer-content nav{display:flex;flex-direction:column;align-items:flex-start;gap:14px;font-size:14px}.footer-content nav h2{margin:2px 0 8px;color:#fff;font-size:15px}.footer-content nav a:hover{text-decoration:underline;text-underline-offset:4px}.footer-bottom{border-top:1px solid #ffffff2c;padding:22px 0 30px;color:#b9d4ce;font-size:12px}@media(max-width:640px){.footer-content{grid-template-columns:1fr 1fr;gap:36px 20px;padding:48px 0 36px}.footer-about{grid-column:1/-1}.footer-content nav{font-size:13px}}

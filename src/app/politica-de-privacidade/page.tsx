@@ -76,8 +76,9 @@ export default function PoliticaDePrivacidade() {
 
             <h2>8. Contato</h2>
             <p>
-                Fluxo Clínicas — <a href="https://www.fluxoapps.online">www.fluxoapps.online</a><br />
-                E-mail: <a href="mailto:joaovictorro11@gmail.com">joaovictorro11@gmail.com</a>
+                FluxoClínicas — CNPJ 58.878.631/0001-98<br />
+                Site: <a href="https://fluxoclinicas.online">fluxoclinicas.online</a><br />
+                Contato: <a href="mailto:joaovictorro11@gmail.com">joaovictorro11@gmail.com</a>
             </p>
         </main>
     );
