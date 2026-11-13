@@ -10,6 +10,29 @@ const messagingOptions = [
   { value: "nao-sei", label: "Ainda não sei o volume" },
 ];
 type DemoSlot = { id: string; startsAt: string; endsAt: string };
+type Attribution = { source: string; medium: string; campaign: string; content: string; landingPage: string; referrer: string; cta: string };
+
+function getAttribution(): Attribution {
+  const params = new URLSearchParams(window.location.search);
+  let previous: string | null = null;
+  try { previous = window.sessionStorage.getItem("fluxo:first-touch"); } catch { /* Storage may be disabled. */ }
+  let first: Omit<Attribution, "cta"> | null = null;
+  try { first = previous ? JSON.parse(previous) : null; } catch { /* Ignore invalid browser storage. */ }
+  if (!first) {
+    first = {
+      source: (params.get("utm_source") || document.referrer || "direto").slice(0, 100),
+      medium: (params.get("utm_medium") || (document.referrer ? "referencia" : "direto")).slice(0, 100),
+      campaign: (params.get("utm_campaign") || "").slice(0, 160),
+      content: (params.get("utm_content") || "").slice(0, 160),
+      landingPage: `${window.location.pathname}${window.location.search}`.slice(0, 300),
+      referrer: document.referrer.slice(0, 300),
+    };
+    try { window.sessionStorage.setItem("fluxo:first-touch", JSON.stringify(first)); } catch { /* Storage may be disabled. */ }
+  }
+  let cta = "formulario";
+  try { cta = window.sessionStorage.getItem("fluxo:last-cta") || cta; } catch { /* Storage may be disabled. */ }
+  return { ...first, cta: cta.slice(0, 100) };
+}
 
 export default function SignupFlow() {
   const [journey, setJourney] = useState<"start" | "demo">("start");
@@ -29,6 +52,10 @@ export default function SignupFlow() {
   const [postalCode, setPostalCode] = useState("");
   const [province, setProvince] = useState("");
   const [doctors, setDoctors] = useState("1");
+  const [currentSystem, setCurrentSystem] = useState("");
+  const [processToImprove, setProcessToImprove] = useState("");
+  const [monthlyVolume, setMonthlyVolume] = useState("");
+  const [expectedResult, setExpectedResult] = useState("");
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
   const [stage, setStage] = useState<"plan" | "account" | "payment">("plan");
@@ -39,6 +66,8 @@ export default function SignupFlow() {
   const [selectedSlot, setSelectedSlot] = useState("");
   const [slotsLoading, setSlotsLoading] = useState(false);
   const checkoutAttempt = useRef<string | null>(null);
+
+  useEffect(() => { getAttribution(); }, []);
 
   useEffect(() => { checkoutAttempt.current = null; }, [plan, messaging, paymentMethod, name, clinic, slug, crm, password, email, phone, taxId, address, addressNumber, postalCode, province, doctors]);
 
@@ -103,7 +132,7 @@ export default function SignupFlow() {
       if (journey === "demo" && selectedSlot) {
         const response = await fetch("/api/demo-bookings", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slotId: selectedSlot, plan, messaging: messagingPackages.some(option => option.value === messaging) ? messaging : null, name, clinic, email, phone, doctors: Number(doctors) }),
+          body: JSON.stringify({ slotId: selectedSlot, plan, messaging: messagingPackages.some(option => option.value === messaging) ? messaging : null, name, clinic, email, phone, doctors: Number(doctors), currentSystem, processToImprove, monthlyVolume, expectedResult, attribution: getAttribution() }),
         });
         if (!response.ok) throw new Error("Não foi possível reservar este horário. Escolha outro ou tente novamente.");
         setSubmitted(true);
@@ -113,7 +142,7 @@ export default function SignupFlow() {
       const response = await fetch("/api/commercial-leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, messaging, name, clinic, email, phone, doctors: Number(doctors), website: "", intent: wantsPurchase ? "purchase" : "demo" }),
+        body: JSON.stringify({ plan, messaging, name, clinic, email, phone, doctors: Number(doctors), website: "", intent: wantsPurchase ? "purchase" : "demo", currentSystem, processToImprove, monthlyVolume, expectedResult, attribution: getAttribution() }),
       });
       if (!response.ok) throw new Error("Não foi possível enviar sua solicitação. Tente novamente em instantes.");
       setSubmitted(true);
@@ -146,6 +175,7 @@ export default function SignupFlow() {
       {checkoutEligible && <><div className="signup-row"><label>CEP do pagador<input required inputMode="numeric" autoComplete="postal-code" value={postalCode} onChange={event => { setPostalCode(event.target.value); setReady(false); }} placeholder="00000-000" /></label><label>Rua e endereço<input required autoComplete="street-address" value={address} onChange={event => { setAddress(event.target.value); setReady(false); }} placeholder="Rua, avenida ou praça" /></label></div><div className="signup-row"><label>Número<input required value={addressNumber} onChange={event => { setAddressNumber(event.target.value); setReady(false); }} placeholder="Número" /></label><label>Bairro<input required value={province} onChange={event => { setProvince(event.target.value); setReady(false); }} placeholder="Bairro" /></label></div></>}
       <div className="signup-row"><label>E-mail de contato<input required type="email" autoComplete="email" value={email} onChange={event => { setEmail(event.target.value); setReady(false); }} placeholder="voce@clinica.com.br" /></label><label>WhatsApp com DDD<input required type="tel" autoComplete="tel" value={phone} onChange={event => { setPhone(event.target.value); setReady(false); }} placeholder="(62) 99999-9999" /></label></div>
       {!checkoutEligible && <label>Quantos médicos usarão o sistema?<input required type="number" min="1" max="100" value={doctors} onChange={event => { setDoctors(event.target.value); setReady(false); }} placeholder="Ex.: 5" /></label>}
+      {!checkoutEligible && <div className="signup-diagnosis"><p className="signup-diagnosis-title">Conte o que sua clínica precisa resolver</p><p>Essas informações ajudam nossa equipe a preparar um diagnóstico e uma proposta para o seu fluxo.</p><label>Qual processo mais atrapalha sua rotina?<textarea required maxLength={1000} value={processToImprove} onChange={event => setProcessToImprove(event.target.value)} placeholder="Ex.: agendamentos por WhatsApp, confirmação manual ou repasse médico" /></label><div className="signup-row"><label>Qual sistema você usa hoje? <small>(opcional)</small><input maxLength={300} value={currentSystem} onChange={event => setCurrentSystem(event.target.value)} placeholder="Sistema atual ou planilhas" /></label><label>Volume aproximado por mês <small>(opcional)</small><input maxLength={160} value={monthlyVolume} onChange={event => setMonthlyVolume(event.target.value)} placeholder="Ex.: 800 consultas" /></label></div><label>Que resultado você espera? <small>(opcional)</small><textarea maxLength={1000} value={expectedResult} onChange={event => setExpectedResult(event.target.value)} placeholder="Ex.: reduzir faltas e organizar a recepção" /></label></div>}
       {journey === "demo" && <label>Horário da demonstração<select value={selectedSlot} onChange={event => { setSelectedSlot(event.target.value); setReady(false); }} disabled={slotsLoading || demoSlots.length === 0}><option value="">{slotsLoading ? "Carregando horários..." : demoSlots.length ? "Escolha um horário" : "Nenhum horário disponível; solicite contato"}</option>{demoSlots.map(slot => <option key={slot.id} value={slot.id}>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(slot.startsAt))}</option>)}</select></label>}
       <div className="signup-total" aria-live="polite"><span>{checkoutEligible ? "Pagamento de hoje" : "Total mensal estimado"}</span><strong>{total === null ? "Sob proposta" : formatBRL(checkoutEligible ? checkoutBase! : total)}</strong><small>{checkoutEligible ? "Plano Médico Individual. " : "Plano + médicos + franquia escolhida. "} {checkoutEligible ? paymentMethod === "PIX" ? "O Pix aparecerá na página de pagamento da FluxoClínicas." : paymentMethod === "BOLETO" ? "O boleto aparecerá na página de pagamento da FluxoClínicas." : "O cartão será informado na página segura do Asaas." : "Sem cobrança nesta etapa."}</small></div>
       <div className="signup-flow-actions"><button type="button" onClick={() => setStage("plan")}>← Voltar</button><button className="button button-coral" type="submit">{checkoutEligible ? "Continuar para pagamento" : "Revisar solicitação"}</button></div>
